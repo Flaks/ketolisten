@@ -1,13 +1,15 @@
 // Ketolisten service worker.
 // Bump CACHE_NAME whenever index.html (or anything in APP_SHELL) changes,
 // so returning visitors pick up the new version instead of a stale cache.
-var CACHE_NAME = "ketolisten-v2";
+var CACHE_NAME = "ketolisten-v3";
 var APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/icon-maskable-192.png",
+  "./icons/icon-maskable-512.png",
   "./icons/apple-touch-icon.png"
 ];
 
