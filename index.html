@@ -101,6 +101,36 @@
   }
   .subhead{ margin:0; color:var(--text-muted); font-size:14.5px; }
 
+  /* Home menu */
+  .nav-section{ padding:6px 28px 28px; }
+  .nav-primary{
+    display:flex; flex-direction:column; align-items:flex-start; gap:5px; width:100%; text-align:left;
+    background:var(--accent); color:var(--accent-contrast); border:none; border-radius:14px;
+    padding:22px 22px 20px; margin-bottom:12px; font-family:inherit; cursor:pointer;
+  }
+  .nav-primary .nt-title{ font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:22px; }
+  .nav-primary .nt-meta{ font-family:"IBM Plex Mono",monospace; font-size:12.5px; opacity:.88; font-variant-numeric:tabular-nums; }
+  .nav-primary .nt-arrow{ margin-top:8px; font-size:13px; opacity:.8; }
+  .nav-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:9px; }
+  .nav-tile{
+    display:flex; flex-direction:column; align-items:flex-start; gap:5px; text-align:left;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:12px;
+    padding:14px 11px; font-family:inherit; color:var(--text); cursor:pointer;
+  }
+  .nav-tile .nt-title{ font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:13.5px; line-height:1.25; }
+  .nav-tile .nt-meta{ font-size:10.5px; color:var(--text-muted); line-height:1.3; }
+  .nav-tile:hover{ border-color:var(--accent); }
+  .nav-tile:focus-visible, .nav-primary:focus-visible{ outline:2px solid var(--accent-strong); outline-offset:2px; }
+
+  .view-head{ display:flex; align-items:center; gap:10px; padding:22px 28px 2px; }
+  .backbtn{
+    display:flex; align-items:center; gap:5px; background:none; border:none; cursor:pointer;
+    font:600 13px "Work Sans",sans-serif; color:var(--accent-strong); padding:6px 8px 6px 0; margin-left:-8px; flex:none;
+  }
+  .backbtn:hover{ color:var(--accent); }
+  .backbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .view-title{ font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:19px; margin:0; }
+
   .control{ margin:22px 28px 4px; padding:18px 20px 20px; background:var(--surface-2); border-radius:10px; border:1px solid var(--border); }
   .control-top{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
   .control-top .label{ font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:600; }
@@ -145,18 +175,7 @@
   .switch-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-muted); }
   .switch-row input{ accent-color:var(--accent); width:15px; height:15px; }
 
-  .panels{ padding:0 28px; border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); margin-top:8px; }
-  details.panel{ padding:13px 0; }
-  details.panel + details.panel{ border-top:1px dashed var(--border); }
-  details.panel > summary{
-    cursor:pointer; font-family:"Fraunces", Georgia, serif; font-weight:600; font-size:14.5px;
-    list-style:none; display:flex; align-items:center; justify-content:space-between; color:var(--text);
-  }
-  details.panel > summary::-webkit-details-marker{ display:none; }
-  details.panel > summary::after{ content:"+"; font-family:"IBM Plex Mono",monospace; color:var(--text-muted); font-size:16px; }
-  details.panel[open] > summary::after{ content:"\2013"; }
-  details.panel > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
-  .panel-body{ padding-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .view-body{ padding:14px 28px 6px; display:flex; flex-direction:column; gap:12px; }
   .hint{ font-size:12px; color:var(--text-muted); margin:0; line-height:1.5; }
 
   .order-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; font-size:13.5px; }
@@ -298,79 +317,124 @@
   <div class="ticket">
     <div class="zigzag"></div>
 
-    <header class="ticket-head">
-      <h1>Ketolisten</h1>
-      <p class="subhead">Én handleliste, justerbar mellom vanlig kost og streng keto. Del lenken med hvem du vil – hver person får sin egen liste.</p>
-    </header>
-
-    <div class="control">
-      <div class="control-top">
-        <span class="label">Keto-fokus</span>
-        <span class="level-name" id="levelName"></span>
-      </div>
-      <input type="range" id="ketoSlider" min="0" max="4" step="1" aria-label="Juster keto-fokus" oninput="setKetoLevel(this.value)">
-      <div class="ticks" aria-hidden="true">
-        <span data-i="0">Ingen</span><span data-i="1">Lett</span><span data-i="2">Moderat</span><span data-i="3">Streng</span><span data-i="4">Full</span>
-      </div>
-      <p class="level-desc" id="levelDesc" aria-live="polite"></p>
-    </div>
-
-    <div class="summary">
-      <span class="count" id="summaryCount"></span>
-      <div class="summary-actions">
-        <label class="switch-row"><input type="checkbox" id="showAllToggle" onchange="setShowAll(this.checked)"> Vis alle varer</label>
-        <button class="linkbtn" onclick="copyLink()">Del liste</button>
-        <button class="linkbtn" onclick="clearBought()">Tøm handlekurv</button>
-      </div>
-    </div>
-    <p class="share-status" id="shareStatus" aria-live="polite"></p>
-
-    <div class="panels">
-      <details class="panel">
-        <summary>Rekkefølge i butikken</summary>
-        <div class="panel-body">
-          <p class="hint">Sorter kategoriene i den rekkefølgen du går gjennom butikken.</p>
-          <div id="orderList"></div>
+    <!-- HOME -->
+    <div id="viewHome">
+      <header class="ticket-head">
+        <h1>Ketolisten</h1>
+        <p class="subhead">Hva vil du gjøre?</p>
+      </header>
+      <div class="nav-section">
+        <button type="button" class="nav-primary" onclick="goTo('list')">
+          <span class="nt-title">Handleliste</span>
+          <span class="nt-meta" id="tileListMeta"></span>
+          <span class="nt-arrow">Åpne &rarr;</span>
+        </button>
+        <div class="nav-grid">
+          <button type="button" class="nav-tile" onclick="goTo('recipes')">
+            <span class="nt-title">Oppskrifter</span>
+            <span class="nt-meta" id="tileRecipesMeta"></span>
+          </button>
+          <button type="button" class="nav-tile" onclick="goTo('history')">
+            <span class="nt-title">Historikk</span>
+            <span class="nt-meta" id="tileHistoryMeta"></span>
+          </button>
+          <button type="button" class="nav-tile" onclick="goTo('settings')">
+            <span class="nt-title">Innstillinger</span>
+            <span class="nt-meta">Rekkefølge</span>
+          </button>
         </div>
-      </details>
-      <details class="panel">
-        <summary>Oppskrifter til uken</summary>
-        <div class="panel-body">
-          <p class="hint">Legg en ferdig keto-oppskrift rett i handlelisten, eller lagre ditt eget utvalg som en oppskrift du kan bruke igjen. Oppskriftene sorteres etter hvor mange ingredienser du allerede har på listen, så de du nesten kan lage i kveld havner øverst.</p>
-          <div id="presetRecipes"></div>
-          <div id="customRecipes"></div>
-          <form class="addform" onsubmit="saveRecipe(event)">
-            <input type="text" id="recipeNameInput" placeholder="Lagre nåværende liste som oppskrift …" maxlength="40" aria-label="Navn på oppskrift">
-            <button type="submit" class="btn">Lagre</button>
+      </div>
+    </div>
+
+    <!-- SHOPPING LIST -->
+    <div id="viewList" hidden>
+      <div class="view-head">
+        <button type="button" class="backbtn" onclick="goHome()" aria-label="Tilbake til forsiden">&larr; Tilbake</button>
+        <h2 class="view-title">Handleliste</h2>
+      </div>
+
+      <div class="control">
+        <div class="control-top">
+          <span class="label">Keto-fokus</span>
+          <span class="level-name" id="levelName"></span>
+        </div>
+        <input type="range" id="ketoSlider" min="0" max="4" step="1" aria-label="Juster keto-fokus" oninput="setKetoLevel(this.value)">
+        <div class="ticks" aria-hidden="true">
+          <span data-i="0">Ingen</span><span data-i="1">Lett</span><span data-i="2">Moderat</span><span data-i="3">Streng</span><span data-i="4">Full</span>
+        </div>
+        <p class="level-desc" id="levelDesc" aria-live="polite"></p>
+      </div>
+
+      <div class="summary">
+        <span class="count" id="summaryCount"></span>
+        <div class="summary-actions">
+          <label class="switch-row"><input type="checkbox" id="showAllToggle" onchange="setShowAll(this.checked)"> Vis alle varer</label>
+          <button class="linkbtn" onclick="copyLink()">Del liste</button>
+          <button class="linkbtn" onclick="clearBought()">Tøm handlekurv</button>
+        </div>
+      </div>
+      <p class="share-status" id="shareStatus" aria-live="polite"></p>
+
+      <div class="categories" id="categories"></div>
+
+      <div class="categories" style="padding-top:0;">
+        <div class="category" style="border-top:1px dashed var(--border);">
+          <h2>Egne varer <span class="n" id="customCount"></span></h2>
+          <div id="customList"></div>
+          <form class="addform" style="margin-top:8px;" onsubmit="addCustom(event)">
+            <input type="text" id="customInput" placeholder="Legg til egen vare …" maxlength="40" aria-label="Navn på egen vare">
+            <button type="submit" class="btn">Legg til</button>
           </form>
         </div>
-      </details>
-      <details class="panel">
-        <summary>Historikk &amp; statistikk</summary>
-        <div class="panel-body">
-          <p class="hint">Arkiver handlekurven når du er ferdig å handle, så kan du legge den samme handelen til igjen senere og følge lavkarbo-andelen over tid.</p>
-          <button type="button" class="btn" onclick="endWeek()">Arkiver handlekurven som ny uke</button>
-          <div id="historyList"></div>
-        </div>
-      </details>
+      </div>
+
+      <div class="total-line">
+        <div class="tl-row"><span class="tl-label">Totalt på listen</span><span class="tl-value" id="totalValue"></span></div>
+        <div class="tl-row tl-price" id="tlPriceRow" hidden><span class="tl-label">Anslått pris</span><span class="tl-value" id="tlPriceValue"></span></div>
+      </div>
     </div>
 
-    <div class="categories" id="categories"></div>
-
-    <div class="categories" style="padding-top:0;">
-      <div class="category" style="border-top:1px dashed var(--border);">
-        <h2>Egne varer <span class="n" id="customCount"></span></h2>
-        <div id="customList"></div>
-        <form class="addform" style="margin-top:8px;" onsubmit="addCustom(event)">
-          <input type="text" id="customInput" placeholder="Legg til egen vare …" maxlength="40" aria-label="Navn på egen vare">
-          <button type="submit" class="btn">Legg til</button>
+    <!-- RECIPES -->
+    <div id="viewRecipes" hidden>
+      <div class="view-head">
+        <button type="button" class="backbtn" onclick="goHome()" aria-label="Tilbake til forsiden">&larr; Tilbake</button>
+        <h2 class="view-title">Oppskrifter</h2>
+      </div>
+      <div class="view-body">
+        <p class="hint">Legg en ferdig keto-oppskrift rett i handlelisten, eller lagre ditt eget utvalg som en oppskrift du kan bruke igjen. Oppskriftene sorteres etter hvor mange ingredienser du allerede har på listen, så de du nesten kan lage i kveld havner øverst.</p>
+        <div id="presetRecipes"></div>
+        <div id="customRecipes"></div>
+        <form class="addform" onsubmit="saveRecipe(event)">
+          <input type="text" id="recipeNameInput" placeholder="Lagre nåværende liste som oppskrift …" maxlength="40" aria-label="Navn på oppskrift">
+          <button type="submit" class="btn">Lagre</button>
         </form>
       </div>
     </div>
 
-    <div class="total-line">
-      <div class="tl-row"><span class="tl-label">Totalt på listen</span><span class="tl-value" id="totalValue"></span></div>
-      <div class="tl-row tl-price" id="tlPriceRow" hidden><span class="tl-label">Anslått pris</span><span class="tl-value" id="tlPriceValue"></span></div>
+    <!-- HISTORY -->
+    <div id="viewHistory" hidden>
+      <div class="view-head">
+        <button type="button" class="backbtn" onclick="goHome()" aria-label="Tilbake til forsiden">&larr; Tilbake</button>
+        <h2 class="view-title">Historikk &amp; statistikk</h2>
+      </div>
+      <div class="view-body">
+        <p class="hint">Arkiver handlekurven når du er ferdig å handle, så kan du legge den samme handelen til igjen senere og følge lavkarbo-andelen over tid.</p>
+        <button type="button" class="btn" onclick="endWeek()">Arkiver handlekurven som ny uke</button>
+        <div id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="viewSettings" hidden>
+      <div class="view-head">
+        <button type="button" class="backbtn" onclick="goHome()" aria-label="Tilbake til forsiden">&larr; Tilbake</button>
+        <h2 class="view-title">Innstillinger</h2>
+      </div>
+      <div class="view-body">
+        <p class="hint">Rekkefølge i butikken: sorter kategoriene i den rekkefølgen du går gjennom butikken.</p>
+        <div id="orderList"></div>
+        <p class="hint">Tema (lys/mørk/auto) styres øverst på siden, uansett hvilken skjerm du er på.</p>
+      </div>
     </div>
 
     <div class="zigzag zigzag--bottom"></div>
@@ -573,7 +637,7 @@
   async function copyLink(){
     var el = document.getElementById("shareStatus");
     try{
-      await navigator.clipboard.writeText(location.href);
+      await navigator.clipboard.writeText(location.origin + location.pathname);
       if(el){ el.textContent = "Lenke kopiert! Del den med hvem du vil – alle får sin egen liste å justere selv."; setTimeout(function(){ el.textContent = ""; }, 5000); }
     }catch(e){
       if(el) el.textContent = "Kunne ikke kopiere automatisk – kopier lenken fra adressefeltet.";
@@ -811,20 +875,32 @@
     var custom = state.recipes.map(function(r){ return {id: r.id, name: r.name, items: r.items, match: recipeMatch(r.items)}; });
     custom.sort(byMatchDesc);
     document.getElementById("customRecipes").innerHTML = custom.map(function(r){ return recipeCardHtml(r, true); }).join("");
+
+    var readyCount = preset.filter(function(r){ return r.match.total > 0 && r.match.have === r.match.total; }).length
+      + custom.filter(function(r){ return r.match.total > 0 && r.match.have === r.match.total; }).length;
+    var totalRecipes = preset.length + custom.length;
+    document.getElementById("tileRecipesMeta").textContent = readyCount > 0
+      ? readyCount + " klare akkurat nå"
+      : totalRecipes + " oppskrifter";
   }
 
   function renderHistory(){
     var el = document.getElementById("historyList");
-    if(state.history.length === 0){ el.innerHTML = '<p class="empty">Ingen arkiverte uker ennå.</p>'; return; }
-    el.innerHTML = state.history.map(function(entry, idx){
-      var color = entry.ketoPct == null ? "var(--text-muted)" : entry.ketoPct >= 70 ? "var(--carb-1)" : entry.ketoPct >= 40 ? "var(--carb-3)" : "var(--carb-5)";
-      var bar = entry.ketoPct == null ? "" : '<div class="hist-bar-track"><div class="hist-bar-fill" style="width:' + entry.ketoPct + '%;background:' + color + '"></div></div>';
-      return '<div class="hist-row"><div class="hist-top"><span class="hist-date">' + formatDate(entry.date) + '</span>' +
-        '<span class="hist-meta">' + entry.items.length + ' varer' + (entry.ketoPct != null ? " · " + entry.ketoPct + "% lavkarbo" : "") + '</span></div>' +
-        bar +
-        '<div class="hist-actions"><button type="button" class="linkbtn" onclick="reAddHistory(' + idx + ')">Legg til igjen</button>' +
-        '<button type="button" class="linkbtn" onclick="deleteHistory(' + idx + ')">Slett</button></div></div>';
-    }).join("");
+    if(state.history.length === 0){ el.innerHTML = '<p class="empty">Ingen arkiverte uker ennå.</p>'; }
+    else{
+      el.innerHTML = state.history.map(function(entry, idx){
+        var color = entry.ketoPct == null ? "var(--text-muted)" : entry.ketoPct >= 70 ? "var(--carb-1)" : entry.ketoPct >= 40 ? "var(--carb-3)" : "var(--carb-5)";
+        var bar = entry.ketoPct == null ? "" : '<div class="hist-bar-track"><div class="hist-bar-fill" style="width:' + entry.ketoPct + '%;background:' + color + '"></div></div>';
+        return '<div class="hist-row"><div class="hist-top"><span class="hist-date">' + formatDate(entry.date) + '</span>' +
+          '<span class="hist-meta">' + entry.items.length + ' varer' + (entry.ketoPct != null ? " · " + entry.ketoPct + "% lavkarbo" : "") + '</span></div>' +
+          bar +
+          '<div class="hist-actions"><button type="button" class="linkbtn" onclick="reAddHistory(' + idx + ')">Legg til igjen</button>' +
+          '<button type="button" class="linkbtn" onclick="deleteHistory(' + idx + ')">Slett</button></div></div>';
+      }).join("");
+    }
+    document.getElementById("tileHistoryMeta").textContent = state.history.length > 0
+      ? state.history.length + (state.history.length === 1 ? " uke lagret" : " uker lagret")
+      : "Ingen uker ennå";
   }
 
   function render(){
@@ -899,6 +975,7 @@
 
     document.getElementById("summaryCount").textContent = totalOn + " varer på listen · " + totalBought + " kjøpt";
     document.getElementById("totalValue").textContent = totalOn + " varer";
+    document.getElementById("tileListMeta").textContent = totalOn + " varer på listen · " + totalBought + " kjøpt";
 
     var priceSum = computeTotalPrice();
     var priceRow = document.getElementById("tlPriceRow");
@@ -909,6 +986,28 @@
     renderRecipes();
     renderHistory();
   }
+
+  // ---- Screen navigation ----
+  var VIEW_IDS = { home:"viewHome", list:"viewList", recipes:"viewRecipes", history:"viewHistory", settings:"viewSettings" };
+  var currentView = "home";
+
+  function renderView(){
+    Object.keys(VIEW_IDS).forEach(function(v){
+      document.getElementById(VIEW_IDS[v]).hidden = (v !== currentView);
+    });
+  }
+  function goTo(view){
+    if(!VIEW_IDS[view] || view === currentView){ return; }
+    currentView = view;
+    try{ history.pushState({view: view}, "", "#" + view); }catch(e){}
+    renderView();
+    window.scrollTo(0, 0);
+  }
+  function goHome(){ goTo("home"); }
+  window.addEventListener("popstate", function(e){
+    currentView = (e.state && e.state.view) || "home";
+    renderView();
+  });
 
   // ---- Install-as-app banner ----
   var deferredInstallPrompt = null;
@@ -937,7 +1036,7 @@
       textEl.textContent = "Legg Ketolisten på startskjermen: trykk ⋮-menyen øverst i Chrome og velg «Installer app» – eller bruk knappen her.";
       btn.hidden = !deferredInstallPrompt;
     } else {
-      return; // desktop / unknown browser: not the target use case for this banner
+      return;
     }
     banner.hidden = false;
 
@@ -974,6 +1073,8 @@
   loadState();
   (function(){ var t = "system"; try{ t = localStorage.getItem(THEME_KEY) || "system"; }catch(e){} applyTheme(t); })();
   render();
+  try{ history.replaceState({view: "home"}, "", "#home"); }catch(e){}
+  renderView();
   initInstallBanner();
 </script>
 </body>
