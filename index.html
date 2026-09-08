@@ -220,11 +220,11 @@
   }
   .category h2 .n{ font-family:"IBM Plex Mono", monospace; font-size:11px; font-weight:500; color:var(--text-muted); font-variant-numeric:tabular-nums; }
 
-  .item{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 2px; border-radius:7px; }
+  .item{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:7px 2px; border-radius:7px; }
   .item:hover{ background:var(--surface-2); }
   .item input[type="checkbox"]{ accent-color:var(--accent); width:17px; height:17px; flex:none; cursor:pointer; }
   .item-spacer{ width:17px; flex:none; }
-  .item-name{ flex:1 1 120px; min-width:100px; font-size:14.5px; }
+  .item-name{ flex:1 1 90px; min-width:70px; font-size:14.5px; }
   label.item-name{ cursor:pointer; }
   .item.bought .item-name{ color:var(--text-muted); text-decoration:line-through; text-decoration-color:var(--text-muted); }
 
@@ -237,7 +237,7 @@
 
   .badge{
     font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:0.02em; text-transform:uppercase;
-    padding:2.5px 8px; border-radius:99px; color:var(--accent-contrast); flex:none; white-space:nowrap; cursor:default;
+    padding:2.5px 6px; border-radius:99px; color:var(--accent-contrast); flex:none; white-space:nowrap; cursor:default;
   }
   .carb-1{ background:var(--carb-1); } .carb-2{ background:var(--carb-2); } .carb-3{ background:var(--carb-3); }
   .carb-4{ background:var(--carb-4); } .carb-5{ background:var(--carb-5); } .carb-0{ background:var(--accent); }
@@ -380,6 +380,7 @@
         </div>
       </div>
       <p class="share-status" id="shareStatus" aria-live="polite"></p>
+      <p class="hint" id="emptyListHint" style="margin:0 28px 4px;" hidden>Listen din er tom. Bla i varene under og trykk <strong>+</strong> på det du vil handle – keto-fokuset over styrer bare hvilke som vises som forslag.</p>
 
       <div class="categories" id="categories"></div>
 
@@ -588,11 +589,11 @@
   ];
 
   var LEVELS = [
-    {name:"Ingen fokus", maxCarb:5, desc:"Full handleliste – ingenting er filtrert bort."},
-    {name:"Lett fokus", maxCarb:4, desc:"Brød, pasta og søtsaker begynner å siles ut."},
-    {name:"Moderat keto", maxCarb:3, desc:"Karbohydrater kun i små mengder – korn og rotgrønnsaker med høyt innhold ute."},
-    {name:"Streng keto", maxCarb:2, desc:"Nesten ingen karbohydrater – kun lavkarbo grønnsaker blir med."},
-    {name:"Full keto", maxCarb:1, desc:"Kjøtt, fisk, egg, fett og grønt over bakken. Alt annet ute."}
+    {name:"Ingen fokus", maxCarb:5, desc:"Alle varer vises som forslag du kan legge til."},
+    {name:"Lett fokus", maxCarb:4, desc:"Brød, pasta og søtsaker vises ikke som forslag lenger."},
+    {name:"Moderat keto", maxCarb:3, desc:"Bare varer med lite karbohydrater vises som forslag."},
+    {name:"Streng keto", maxCarb:2, desc:"Bare lavkarbo grønnsaker og kjernevarer vises som forslag."},
+    {name:"Full keto", maxCarb:1, desc:"Bare kjøtt, fisk, egg, fett og grønt over bakken vises som forslag."}
   ];
 
   var CARB_LABEL = {1:"Kjernevare", 2:"Lavkarbo", 3:"Moderat", 4:"Karbo", 5:"Høy karbo"};
@@ -609,7 +610,7 @@
   var state = {
     ketoLevel: 2,
     bought: [],
-    overrides: {},
+    selected: [],
     favorites: [],
     amount: {},
     prices: {},
@@ -626,7 +627,17 @@
   function loadState(){
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){ Object.assign(state, JSON.parse(raw)); }
+      if(raw){
+        var saved = JSON.parse(raw);
+        // Migrate from the old auto-filled model: items that were force-included
+        // via an override become explicitly selected; the rest of the old
+        // override map (force-excluded defaults) no longer means anything.
+        if(saved.selected === undefined && saved.overrides){
+          saved.selected = Object.keys(saved.overrides).filter(function(k){ return saved.overrides[k] === true; });
+          delete saved.overrides;
+        }
+        Object.assign(state, saved);
+      }
     }catch(e){}
   }
 
@@ -656,11 +667,17 @@
   }
 
   function isFavorite(id){ return state.favorites.indexOf(id) !== -1; }
+  function isSelected(id){ return state.selected.indexOf(id) !== -1; }
 
+  // Whether the item is actually on your list — nothing lands here on its
+  // own; you either favorited it or tapped + to add it.
   function onList(item){
-    if(isFavorite(item.id)) return true;
-    var ov = state.overrides[item.id];
-    if(ov !== undefined) return ov;
+    return isFavorite(item.id) || isSelected(item.id);
+  }
+
+  // Whether the item fits the current keto-focus level. This only decides
+  // what shows up to browse/add by default — it never adds anything for you.
+  function matchesKeto(item){
     return item.carb <= LEVELS[state.ketoLevel].maxCarb;
   }
 
@@ -702,12 +719,21 @@
   }
   function toggleFavorite(id){
     var idx = state.favorites.indexOf(id);
-    if(idx === -1) state.favorites.push(id); else state.favorites.splice(idx, 1);
+    if(idx === -1){
+      state.favorites.push(id);
+      if(!isSelected(id)) state.selected.push(id); // starring it also puts it on your list
+    } else {
+      state.favorites.splice(idx, 1);
+    }
     saveState(); render();
   }
-  function addItem(id){ state.overrides[id] = true; saveState(); render(); }
+  function addItem(id){
+    if(!isSelected(id)) state.selected.push(id);
+    saveState(); render();
+  }
   function removeItem(id){
-    state.overrides[id] = false;
+    var si = state.selected.indexOf(id);
+    if(si !== -1) state.selected.splice(si, 1);
     var fi = state.favorites.indexOf(id);
     if(fi !== -1) state.favorites.splice(fi, 1);
     saveState(); render();
@@ -736,7 +762,7 @@
 
   var recipeStatusTimer = null;
   function applyRecipe(items, name){
-    items.forEach(function(ri){ state.overrides[ri.id] = true; state.amount[ri.id] = ri.amount; });
+    items.forEach(function(ri){ if(!isSelected(ri.id)) state.selected.push(ri.id); state.amount[ri.id] = ri.amount; });
     saveState(); render();
     var el = document.getElementById("recipeStatus");
     if(el){
@@ -792,7 +818,7 @@
     if(!entry) return;
     entry.items.forEach(function(it){
       if(ITEMS_BY_ID[it.id]){
-        state.overrides[it.id] = true;
+        if(!isSelected(it.id)) state.selected.push(it.id);
         state.amount[it.id] = it.amount;
       } else {
         var exists = state.custom.some(function(c){ return c.name === it.name; });
@@ -935,7 +961,7 @@
       var cat = CATEGORIES_BY_ID[catId];
       if(!cat) return;
       var items = ITEMS.filter(function(it){ return it.cat === catId; });
-      var visible = items.filter(function(it){ return onList(it) || state.showAll; });
+      var visible = items.filter(function(it){ return onList(it) || matchesKeto(it) || state.showAll; });
       if(visible.length === 0) return;
 
       var onCount = items.filter(onList).length;
@@ -990,6 +1016,7 @@
     document.getElementById("summaryCount").textContent = totalOn + " varer på listen · " + totalBought + " kjøpt";
     document.getElementById("totalValue").textContent = totalOn + " varer";
     document.getElementById("tileListMeta").textContent = totalOn + " varer på listen · " + totalBought + " kjøpt";
+    document.getElementById("emptyListHint").hidden = totalOn > 0;
 
     var priceSum = computeTotalPrice();
     var priceRow = document.getElementById("tlPriceRow");

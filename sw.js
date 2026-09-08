@@ -1,7 +1,7 @@
 // Ketolisten service worker.
 // Bump CACHE_NAME whenever index.html (or anything in APP_SHELL) changes,
 // so returning visitors pick up the new version instead of a stale cache.
-var CACHE_NAME = "ketolisten-v6";
+var CACHE_NAME = "ketolisten-v7";
 var APP_SHELL = [
   "./",
   "./index.html",
