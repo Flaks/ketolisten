@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ketolisten</title>
+<meta name="description" content="Justerbar keto-handleliste med oppskrifter, favoritter, historikk og prisoverslag.">
+<meta name="theme-color" content="#1F5D63">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ketolisten">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#F1F0E4;
+    --surface:#FFFEF9;
+    --surface-2:#E8E6D6;
+    --text:#22241D;
+    --text-muted:#63685A;
+    --border:#DAD7C3;
+    --accent:#1F5D63;
+    --accent-strong:#164448;
+    --accent-soft:#DCEAE9;
+    --accent-contrast:#FBFEFD;
+    --carb-1:#3D7A4E;
+    --carb-2:#748A34;
+    --carb-3:#AE7F32;
+    --carb-4:#BE6E2A;
+    --carb-5:#AE4429;
+    --star:#B8862B;
+    --shadow:0 18px 40px -24px rgba(30,32,24,0.35);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14170F; --surface:#1C201A; --surface-2:#262B21;
+      --text:#EBE9DD; --text-muted:#A2A895; --border:#333827;
+      --accent:#57BABF; --accent-strong:#7ED2D6; --accent-soft:#203431; --accent-contrast:#0B1919;
+      --carb-1:#67AC77; --carb-2:#A3B565; --carb-3:#D3A75C; --carb-4:#DB8F51; --carb-5:#D06E4C;
+      --star:#E0B65C;
+      --shadow:0 18px 40px -20px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14170F; --surface:#1C201A; --surface-2:#262B21;
+    --text:#EBE9DD; --text-muted:#A2A895; --border:#333827;
+    --accent:#57BABF; --accent-strong:#7ED2D6; --accent-soft:#203431; --accent-contrast:#0B1919;
+    --carb-1:#67AC77; --carb-2:#A3B565; --carb-3:#D3A75C; --carb-4:#DB8F51; --carb-5:#D06E4C;
+    --star:#E0B65C;
+    --shadow:0 18px 40px -20px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{ display:none !important; }
+  html,body{ background:var(--bg); }
+  body{
+    color:var(--text); margin:0;
+    font-family:"Work Sans", -apple-system, "Segoe UI", sans-serif;
+    display:flex; justify-content:center;
+    padding:calc(40px + env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) calc(64px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+  .page{ width:100%; max-width:640px; }
+
+  .eyebrow{
+    font-family:"IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+    margin:0 4px 10px; gap:10px 16px;
+  }
+  .eyebrow-left{ display:flex; align-items:center; gap:10px; text-transform:none; letter-spacing:0.02em; }
+  .theme-toggle{ display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:99px; padding:2px; }
+  .tbtn{
+    font:500 10.5px "Work Sans",sans-serif; letter-spacing:0.02em; padding:3px 9px; border-radius:99px;
+    border:none; background:transparent; color:var(--text-muted); cursor:pointer;
+  }
+  .tbtn.active{ background:var(--accent); color:var(--accent-contrast); }
+  .tbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .install-banner{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:10px;
+    padding:12px 14px; margin:0 4px 14px; font-size:13px; color:var(--text);
+  }
+  .install-banner .install-text{ flex:1 1 220px; line-height:1.5; }
+  .install-actions{ display:flex; align-items:center; gap:8px; flex:none; margin-left:auto; }
+
+  .ticket{ background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); overflow:hidden; }
+  .zigzag{
+    height:11px;
+    background-image:linear-gradient(135deg, var(--bg) 50%, transparent 50%), linear-gradient(45deg, var(--bg) 50%, transparent 50%);
+    background-size:16px 16px; background-position:0 0, 8px 0; background-repeat:repeat-x; background-color:var(--surface);
+  }
+  .zigzag--bottom{ transform:scaleY(-1); }
+
+  header.ticket-head{ padding:26px 28px 6px; }
+  h1{
+    font-family:"Fraunces", Georgia, "Times New Roman", serif; font-weight:600;
+    font-size:clamp(28px, 6vw, 34px); margin:0 0 4px; text-wrap:balance; letter-spacing:-0.01em;
+  }
+  .subhead{ margin:0; color:var(--text-muted); font-size:14.5px; }
+
+  .control{ margin:22px 28px 4px; padding:18px 20px 20px; background:var(--surface-2); border-radius:10px; border:1px solid var(--border); }
+  .control-top{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .control-top .label{ font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:600; }
+  .control-top .level-name{ font-family:"Fraunces", Georgia, serif; font-weight:600; font-size:19px; color:var(--accent-strong); }
+  input[type="range"]{
+    -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:99px;
+    background:linear-gradient(to right, var(--accent) var(--fill,50%), var(--border) var(--fill,50%));
+    outline-offset:6px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+    background:var(--accent); border:3px solid var(--accent-contrast); box-shadow:0 1px 4px rgba(0,0,0,0.35); cursor:pointer; margin-top:0;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background:var(--accent); border:3px solid var(--accent-contrast);
+    box-shadow:0 1px 4px rgba(0,0,0,0.35); cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{ height:6px; border-radius:99px; background:var(--border); }
+  input[type="range"]:focus-visible{ outline:2px solid var(--accent); }
+
+  .ticks{ display:flex; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--text-muted); }
+  .ticks span{ width:20%; text-align:center; }
+  .ticks span:first-child{ text-align:left; }
+  .ticks span:last-child{ text-align:right; }
+  .ticks .active{ color:var(--accent-strong); font-weight:600; }
+
+  .level-desc{ margin:14px 2px 0; font-size:13.5px; color:var(--text-muted); line-height:1.5; }
+
+  .summary{
+    display:flex; align-items:center; justify-content:space-between; gap:14px 20px; flex-wrap:wrap;
+    margin:18px 28px 0; padding-bottom:10px; font-size:13px;
+  }
+  .summary .count{ font-family:"IBM Plex Mono", monospace; font-variant-numeric:tabular-nums; color:var(--text); font-weight:600; }
+  .summary-actions{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .linkbtn{
+    background:none; border:none; padding:0; font:inherit; font-size:12.5px;
+    color:var(--accent-strong); text-decoration:underline; text-underline-offset:2px; cursor:pointer;
+  }
+  .linkbtn:hover{ color:var(--accent); }
+  .share-status{ min-height:16px; margin:2px 28px 8px; font-size:12px; color:var(--accent-strong); }
+
+  .switch-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-muted); }
+  .switch-row input{ accent-color:var(--accent); width:15px; height:15px; }
+
+  .panels{ padding:0 28px; border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); margin-top:8px; }
+  details.panel{ padding:13px 0; }
+  details.panel + details.panel{ border-top:1px dashed var(--border); }
+  details.panel > summary{
+    cursor:pointer; font-family:"Fraunces", Georgia, serif; font-weight:600; font-size:14.5px;
+    list-style:none; display:flex; align-items:center; justify-content:space-between; color:var(--text);
+  }
+  details.panel > summary::-webkit-details-marker{ display:none; }
+  details.panel > summary::after{ content:"+"; font-family:"IBM Plex Mono",monospace; color:var(--text-muted); font-size:16px; }
+  details.panel[open] > summary::after{ content:"\2013"; }
+  details.panel > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .panel-body{ padding-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .hint{ font-size:12px; color:var(--text-muted); margin:0; line-height:1.5; }
+
+  .order-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; font-size:13.5px; }
+  .order-row .ord-btns{ display:flex; gap:4px; }
+
+  .recipe{
+    border:1px solid var(--border); border-radius:9px; padding:10px 12px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--surface);
+  }
+  .recipe.recipe--ready{ border-color:var(--carb-1); }
+  .recipe .rname{ font-size:13.5px; font-weight:600; }
+  .recipe .rmeta{ font-size:11px; color:var(--text-muted); font-family:"IBM Plex Mono",monospace; margin-top:2px; }
+  .recipe .rmissing{ font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .recipe .ractions{ display:flex; gap:6px; flex:none; align-items:center; }
+  .recipe button.add{
+    font:inherit; font-size:12px; font-weight:600; padding:5px 11px; border-radius:6px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-contrast); cursor:pointer;
+  }
+  .recipe button.add:hover{ background:var(--accent-strong); border-color:var(--accent-strong); }
+
+  .hist-row{ padding:8px 0; border-top:1px dashed var(--border); display:flex; flex-direction:column; gap:6px; }
+  .hist-row:first-child{ border-top:none; }
+  .hist-top{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:12.5px; flex-wrap:wrap; }
+  .hist-date{ font-family:"IBM Plex Mono",monospace; font-weight:600; }
+  .hist-meta{ color:var(--text-muted); }
+  .hist-bar-track{ height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden; }
+  .hist-bar-fill{ height:100%; border-radius:99px; }
+  .hist-actions{ display:flex; gap:14px; }
+
+  .categories{ padding:6px 28px 4px; }
+  .category{ padding:16px 0; }
+  .category + .category{ border-top:1px dashed var(--border); }
+  .category h2{
+    font-family:"Fraunces", Georgia, serif; font-size:15.5px; font-weight:600;
+    margin:0 0 10px; display:flex; align-items:baseline; gap:8px;
+  }
+  .category h2 .n{ font-family:"IBM Plex Mono", monospace; font-size:11px; font-weight:500; color:var(--text-muted); font-variant-numeric:tabular-nums; }
+
+  .item{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 2px; border-radius:7px; }
+  .item:hover{ background:var(--surface-2); }
+  .item input[type="checkbox"]{ accent-color:var(--accent); width:17px; height:17px; flex:none; cursor:pointer; }
+  .item-spacer{ width:17px; flex:none; }
+  .item-name{ flex:1 1 120px; min-width:100px; font-size:14.5px; }
+  label.item-name{ cursor:pointer; }
+  .item.bought .item-name{ color:var(--text-muted); text-decoration:line-through; text-decoration-color:var(--text-muted); }
+
+  .amount{
+    width:64px; flex:none; text-align:center;
+    font:500 12.5px "IBM Plex Mono", monospace;
+    padding:4px 3px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text);
+  }
+  .amount:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .badge{
+    font-family:"IBM Plex Mono", monospace; font-size:10.5px; letter-spacing:0.02em; text-transform:uppercase;
+    padding:2.5px 8px; border-radius:99px; color:var(--accent-contrast); flex:none; white-space:nowrap; cursor:default;
+  }
+  .carb-1{ background:var(--carb-1); } .carb-2{ background:var(--carb-2); } .carb-3{ background:var(--carb-3); }
+  .carb-4{ background:var(--carb-4); } .carb-5{ background:var(--carb-5); } .carb-0{ background:var(--accent); }
+
+  .iconbtn{
+    flex:none; width:24px; height:24px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text-muted); font-size:15px; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .iconbtn:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  .iconbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .iconbtn:disabled{ opacity:0.35; cursor:default; }
+  .iconbtn:disabled:hover{ border-color:var(--border); color:var(--text-muted); }
+  .iconbtn.star{ font-size:14px; }
+  .iconbtn.star.on{ color:var(--star); border-color:var(--star); }
+  .iconbtn.more.has{ color:var(--accent-strong); border-color:var(--accent); }
+
+  .item--ghost{ opacity:0.6; }
+  .item--ghost .item-name{ font-style:italic; }
+
+  .item-more{ display:flex; gap:8px; width:100%; padding:0 2px 8px 25px; flex-wrap:wrap; }
+  .item-more input.price{
+    width:76px; font:500 12px "IBM Plex Mono",monospace; padding:5px 7px; border-radius:6px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+  }
+  .item-more input.note{
+    flex:1; min-width:140px; font:400 12.5px "Work Sans",sans-serif; padding:5px 8px; border-radius:6px;
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+  }
+  .item-more input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .addform{ display:flex; gap:8px; }
+  .addform input[type="text"]{
+    flex:1; padding:8px 11px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font:inherit; font-size:14px;
+  }
+  .addform input[type="text"]:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .btn{
+    font:inherit; font-size:13px; font-weight:600; padding:8px 14px; border-radius:7px;
+    border:1px solid var(--accent); background:var(--accent); color:var(--accent-contrast); cursor:pointer; align-self:flex-start;
+  }
+  .btn:hover{ background:var(--accent-strong); border-color:var(--accent-strong); }
+  .btn:focus-visible{ outline:2px solid var(--accent-strong); outline-offset:2px; }
+
+  .total-line{ margin:6px 28px 0; padding:16px 0 24px; border-top:1px dashed var(--border); font-family:"IBM Plex Mono", monospace; }
+  .tl-row{ display:flex; justify-content:space-between; align-items:baseline; }
+  .tl-row .tl-label{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); }
+  .tl-row .tl-value{ font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .tl-price{ margin-top:5px; }
+  .tl-price .tl-value, .tl-price .tl-label{ font-size:13px; color:var(--text-muted); font-weight:600; }
+
+  .empty{ padding:8px 2px; color:var(--text-muted); font-size:13.5px; font-style:italic; }
+  footer.credit{ text-align:center; font-size:11.5px; color:var(--text-muted); margin:14px 4px 0; }
+
+  @media (prefers-reduced-motion: no-preference){
+    .item, .iconbtn, .linkbtn, input[type="range"]::-webkit-slider-thumb{
+      transition:background-color .15s ease, border-color .15s ease, color .15s ease;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">
+    <span class="eyebrow-left">
+      Handleliste
+      <span class="theme-toggle" role="group" aria-label="Tema">
+        <button type="button" class="tbtn" data-t="light" onclick="setTheme('light')">Lys</button>
+        <button type="button" class="tbtn" data-t="dark" onclick="setTheme('dark')">Mørk</button>
+        <button type="button" class="tbtn" data-t="system" onclick="setTheme('system')">Auto</button>
+      </span>
+    </span>
+  </div>
+
+  <div class="install-banner" id="installBanner" hidden>
+    <span class="install-text" id="installText"></span>
+    <span class="install-actions">
+      <button type="button" class="btn" id="installBtn" hidden>Installer app</button>
+      <button type="button" class="iconbtn" id="installDismiss" aria-label="Lukk">&times;</button>
+    </span>
+  </div>
+
+  <div class="ticket">
+    <div class="zigzag"></div>
+
+    <header class="ticket-head">
+      <h1>Ketolisten</h1>
+      <p class="subhead">Én handleliste, justerbar mellom vanlig kost og streng keto. Del lenken med hvem du vil – hver person får sin egen liste.</p>
+    </header>
+
+    <div class="control">
+      <div class="control-top">
+        <span class="label">Keto-fokus</span>
+        <span class="level-name" id="levelName"></span>
+      </div>
+      <input type="range" id="ketoSlider" min="0" max="4" step="1" aria-label="Juster keto-fokus" oninput="setKetoLevel(this.value)">
+      <div class="ticks" aria-hidden="true">
+        <span data-i="0">Ingen</span><span data-i="1">Lett</span><span data-i="2">Moderat</span><span data-i="3">Streng</span><span data-i="4">Full</span>
+      </div>
+      <p class="level-desc" id="levelDesc" aria-live="polite"></p>
+    </div>
+
+    <div class="summary">
+      <span class="count" id="summaryCount"></span>
+      <div class="summary-actions">
+        <label class="switch-row"><input type="checkbox" id="showAllToggle" onchange="setShowAll(this.checked)"> Vis alle varer</label>
+        <button class="linkbtn" onclick="copyLink()">Del liste</button>
+        <button class="linkbtn" onclick="clearBought()">Tøm handlekurv</button>
+      </div>
+    </div>
+    <p class="share-status" id="shareStatus" aria-live="polite"></p>
+
+    <div class="panels">
+      <details class="panel">
+        <summary>Rekkefølge i butikken</summary>
+        <div class="panel-body">
+          <p class="hint">Sorter kategoriene i den rekkefølgen du går gjennom butikken.</p>
+          <div id="orderList"></div>
+        </div>
+      </details>
+      <details class="panel">
+        <summary>Oppskrifter til uken</summary>
+        <div class="panel-body">
+          <p class="hint">Legg en ferdig keto-oppskrift rett i handlelisten, eller lagre ditt eget utvalg som en oppskrift du kan bruke igjen. Oppskriftene sorteres etter hvor mange ingredienser du allerede har på listen, så de du nesten kan lage i kveld havner øverst.</p>
+          <div id="presetRecipes"></div>
+          <div id="customRecipes"></div>
+          <form class="addform" onsubmit="saveRecipe(event)">
+            <input type="text" id="recipeNameInput" placeholder="Lagre nåværende liste som oppskrift …" maxlength="40" aria-label="Navn på oppskrift">
+            <button type="submit" class="btn">Lagre</button>
+          </form>
+        </div>
+      </details>
+      <details class="panel">
+        <summary>Historikk &amp; statistikk</summary>
+        <div class="panel-body">
+          <p class="hint">Arkiver handlekurven når du er ferdig å handle, så kan du legge den samme handelen til igjen senere og følge lavkarbo-andelen over tid.</p>
+          <button type="button" class="btn" onclick="endWeek()">Arkiver handlekurven som ny uke</button>
+          <div id="historyList"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="categories" id="categories"></div>
+
+    <div class="categories" style="padding-top:0;">
+      <div class="category" style="border-top:1px dashed var(--border);">
+        <h2>Egne varer <span class="n" id="customCount"></span></h2>
+        <div id="customList"></div>
+        <form class="addform" style="margin-top:8px;" onsubmit="addCustom(event)">
+          <input type="text" id="customInput" placeholder="Legg til egen vare …" maxlength="40" aria-label="Navn på egen vare">
+          <button type="submit" class="btn">Legg til</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="total-line">
+      <div class="tl-row"><span class="tl-label">Totalt på listen</span><span class="tl-value" id="totalValue"></span></div>
+      <div class="tl-row tl-price" id="tlPriceRow" hidden><span class="tl-label">Anslått pris</span><span class="tl-value" id="tlPriceValue"></span></div>
+    </div>
+
+    <div class="zigzag zigzag--bottom"></div>
+  </div>
+  <footer class="credit">Ketolisten &middot; virker uten nett når den er installert</footer>
+</div>
+
+<script>
+  var ITEMS = [
+    {id:"kylling", name:"Kylling (filet/lår)", cat:"meat", carb:1, g:0},
+    {id:"biff", name:"Biff / karbonade", cat:"meat", carb:1, g:0},
+    {id:"indrefilet", name:"Indrefilet", cat:"meat", carb:1, g:0},
+    {id:"kjottdeig", name:"Kjøttdeig", cat:"meat", carb:1, g:0},
+    {id:"bacon", name:"Bacon", cat:"meat", carb:1, g:1},
+    {id:"skinke", name:"Skinke", cat:"meat", carb:1, g:1},
+    {id:"laks", name:"Laks", cat:"meat", carb:1, g:0},
+    {id:"orret", name:"Ørret", cat:"meat", carb:1, g:0},
+    {id:"torsk", name:"Torsk / hvit fisk", cat:"meat", carb:1, g:0},
+    {id:"tunfisk", name:"Tunfisk (boks)", cat:"meat", carb:1, g:0},
+    {id:"reker", name:"Reker", cat:"meat", carb:1, g:0},
+    {id:"polser", name:"Pølser", cat:"meat", carb:1, g:2},
+
+    {id:"egg", name:"Egg", cat:"dairy", carb:1, g:1},
+    {id:"smor", name:"Smør", cat:"dairy", carb:1, g:0},
+    {id:"flote", name:"Fløte", cat:"dairy", carb:1, g:3},
+    {id:"ost", name:"Ost (gulost / brie)", cat:"dairy", carb:1, g:1},
+    {id:"mozzarella", name:"Mozzarella", cat:"dairy", carb:1, g:2},
+    {id:"kremost", name:"Kremost, naturell", cat:"dairy", carb:1, g:4},
+    {id:"parmesan", name:"Parmesan", cat:"dairy", carb:1, g:3},
+    {id:"cottage", name:"Cottage cheese", cat:"dairy", carb:2, g:3},
+    {id:"yogurt", name:"Gresk yogurt, naturell", cat:"dairy", carb:2, g:4},
+    {id:"romme", name:"Rømme", cat:"dairy", carb:3, g:3},
+    {id:"melk", name:"Melk", cat:"dairy", carb:3, g:5},
+
+    {id:"spinat", name:"Spinat", cat:"veg", carb:1, g:1},
+    {id:"avokado", name:"Avokado", cat:"veg", carb:1, g:2},
+    {id:"sopp", name:"Sopp", cat:"veg", carb:1, g:2},
+    {id:"selleri", name:"Selleri", cat:"veg", carb:1, g:2},
+    {id:"brokkoli", name:"Brokkoli", cat:"veg", carb:2, g:4},
+    {id:"blomkal", name:"Blomkål", cat:"veg", carb:2, g:3},
+    {id:"agurk", name:"Agurk", cat:"veg", carb:2, g:2},
+    {id:"paprika", name:"Paprika", cat:"veg", carb:2, g:4},
+    {id:"tomat", name:"Tomat", cat:"veg", carb:2, g:3},
+    {id:"squash", name:"Courgette / squash", cat:"veg", carb:2, g:3},
+    {id:"aubergine", name:"Aubergine", cat:"veg", carb:2, g:4},
+    {id:"kal", name:"Kål", cat:"veg", carb:2, g:4},
+    {id:"lok", name:"Løk", cat:"veg", carb:2, g:8},
+    {id:"gulrot", name:"Gulrot", cat:"veg", carb:3, g:7},
+    {id:"rodbeter", name:"Rødbeter", cat:"veg", carb:3, g:8},
+    {id:"sotpotet", name:"Søtpotet", cat:"veg", carb:3, g:17},
+    {id:"potet", name:"Poteter", cat:"veg", carb:4, g:15},
+
+    {id:"olivenolje", name:"Olivenolje", cat:"fat", carb:1, g:0},
+    {id:"kokosolje", name:"Kokosolje", cat:"fat", carb:1, g:0},
+    {id:"salt", name:"Salt & pepper", cat:"fat", carb:1, g:0},
+    {id:"krydder", name:"Krydder & urter", cat:"fat", carb:1, g:2},
+    {id:"linfro", name:"Linfrø", cat:"fat", carb:1, g:1},
+    {id:"sesamfro", name:"Sesamfrø", cat:"fat", carb:1, g:3},
+    {id:"notter", name:"Nøtter & mandler", cat:"fat", carb:2, g:6},
+    {id:"chiafro", name:"Chiafrø", cat:"fat", carb:2, g:2},
+    {id:"peanottsmor", name:"Peanøttsmør, naturell", cat:"fat", carb:2, g:8},
+
+    {id:"quinoa", name:"Quinoa", cat:"carbs", carb:3, g:18},
+    {id:"havregryn", name:"Havregryn", cat:"carbs", carb:4, g:55},
+    {id:"couscous", name:"Couscous", cat:"carbs", carb:4, g:23},
+    {id:"knekkebrod", name:"Knekkebrød", cat:"carbs", carb:4, g:55},
+    {id:"brod", name:"Brød", cat:"carbs", carb:5, g:43},
+    {id:"pasta", name:"Pasta", cat:"carbs", carb:5, g:25},
+    {id:"fullkornpasta", name:"Fullkornpasta", cat:"carbs", carb:5, g:22},
+    {id:"ris", name:"Ris", cat:"carbs", carb:5, g:28},
+    {id:"tortilla", name:"Tortilla (hvete)", cat:"carbs", carb:5, g:45},
+
+    {id:"hermtomat", name:"Hermetiske tomater", cat:"pantry", carb:2, g:4},
+    {id:"kokosmelk", name:"Kokosmelk", cat:"pantry", carb:1, g:3},
+    {id:"buljong", name:"Buljong", cat:"pantry", carb:1, g:1},
+    {id:"soyasaus", name:"Soyasaus", cat:"pantry", carb:1, g:1},
+    {id:"eddik", name:"Eddik", cat:"pantry", carb:1, g:0},
+    {id:"sennep", name:"Dijonsennep", cat:"pantry", carb:1, g:2},
+    {id:"ketchup", name:"Ketchup", cat:"pantry", carb:4, g:22},
+
+    {id:"baer", name:"Bær (bringebær / blåbær)", cat:"fruit", carb:2, g:6},
+    {id:"sitron", name:"Sitron", cat:"fruit", carb:2, g:3},
+    {id:"kiwi", name:"Kiwi", cat:"fruit", carb:3, g:10},
+    {id:"eple", name:"Eple", cat:"fruit", carb:4, g:12},
+    {id:"appelsin", name:"Appelsin", cat:"fruit", carb:4, g:9},
+    {id:"banan", name:"Banan", cat:"fruit", carb:4, g:20},
+    {id:"mango", name:"Mango", cat:"fruit", carb:4, g:13},
+    {id:"druer", name:"Druer", cat:"fruit", carb:4, g:16},
+
+    {id:"morksjokolade", name:"Mørk sjokolade 70%+", cat:"snacks", carb:3, g:20},
+    {id:"nottebar", name:"Nøttebar, sukkerfri", cat:"snacks", carb:3, g:15},
+    {id:"popcorn", name:"Popcorn", cat:"snacks", carb:4, g:55},
+    {id:"sjokolade", name:"Sjokolade (melk)", cat:"snacks", carb:5, g:52},
+    {id:"chips", name:"Chips", cat:"snacks", carb:5, g:50},
+    {id:"kjeks", name:"Kjeks", cat:"snacks", carb:5, g:65},
+    {id:"is", name:"Iskrem", cat:"snacks", carb:5, g:22},
+
+    {id:"kaffe", name:"Kaffe", cat:"drinks", carb:1, g:0},
+    {id:"te", name:"Te", cat:"drinks", carb:1, g:0},
+    {id:"vann", name:"Vann", cat:"drinks", carb:1, g:0},
+    {id:"kombucha", name:"Kombucha", cat:"drinks", carb:2, g:3},
+    {id:"alkoholfriol", name:"Alkoholfri øl", cat:"drinks", carb:3, g:4},
+    {id:"brus", name:"Brus (sukkerholdig)", cat:"drinks", carb:5, g:10},
+    {id:"saft", name:"Saft (sukret)", cat:"drinks", carb:5, g:11},
+    {id:"juice", name:"Juice", cat:"drinks", carb:5, g:10}
+  ];
+
+  var CATEGORIES = [
+    {id:"meat", label:"Kjøtt & fisk"},
+    {id:"dairy", label:"Egg & meieri"},
+    {id:"veg", label:"Grønnsaker"},
+    {id:"fat", label:"Fett, nøtter & krydder"},
+    {id:"carbs", label:"Korn & karbohydrater"},
+    {id:"pantry", label:"Skapvarer & hermetikk"},
+    {id:"fruit", label:"Frukt & bær"},
+    {id:"snacks", label:"Snacks & søtt"},
+    {id:"drinks", label:"Drikke"}
+  ];
+
+  var RECIPES = [
+    {id:"r1", name:"Kylling & brokkoli i fløtesaus", items:[
+      {id:"kylling", amount:"500 g"}, {id:"brokkoli", amount:"300 g"}, {id:"flote", amount:"3 dl"},
+      {id:"ost", amount:"150 g"}, {id:"smor", amount:"1 ss"}, {id:"krydder", amount:"1 ts"}
+    ]},
+    {id:"r2", name:"Ovnsbakt laks med spinat", items:[
+      {id:"laks", amount:"400 g"}, {id:"spinat", amount:"150 g"}, {id:"smor", amount:"1 ss"},
+      {id:"sitron", amount:"1 stk"}, {id:"salt", amount:"1 ts"}
+    ]},
+    {id:"r3", name:"Taco-skåler med kjøttdeig", items:[
+      {id:"kjottdeig", amount:"500 g"}, {id:"tomat", amount:"3 stk"}, {id:"agurk", amount:"1 stk"},
+      {id:"ost", amount:"150 g"}, {id:"romme", amount:"2 dl"}, {id:"paprika", amount:"1 stk"}, {id:"krydder", amount:"1 ts"}
+    ]},
+    {id:"r4", name:"Frokost: egg, bacon og avokado", items:[
+      {id:"egg", amount:"6 stk"}, {id:"bacon", amount:"150 g"}, {id:"avokado", amount:"2 stk"}, {id:"smor", amount:"1 ss"}
+    ]},
+    {id:"r5", name:"Blomkålris-wok med kylling", items:[
+      {id:"blomkal", amount:"1 stk"}, {id:"kylling", amount:"400 g"}, {id:"paprika", amount:"1 stk"},
+      {id:"lok", amount:"1 stk"}, {id:"soyasaus", amount:"2 ss"}, {id:"sesamfro", amount:"1 ss"}
+    ]},
+    {id:"r6", name:"Cæsarsalat med kylling", items:[
+      {id:"kylling", amount:"400 g"}, {id:"parmesan", amount:"50 g"}, {id:"romme", amount:"2 dl"},
+      {id:"sennep", amount:"1 ts"}, {id:"salt", amount:"1 ts"}
+    ]}
+  ];
+
+  var LEVELS = [
+    {name:"Ingen fokus", maxCarb:5, desc:"Full handleliste – ingenting er filtrert bort."},
+    {name:"Lett fokus", maxCarb:4, desc:"Brød, pasta og søtsaker begynner å siles ut."},
+    {name:"Moderat keto", maxCarb:3, desc:"Karbohydrater kun i små mengder – korn og rotgrønnsaker med høyt innhold ute."},
+    {name:"Streng keto", maxCarb:2, desc:"Nesten ingen karbohydrater – kun lavkarbo grønnsaker blir med."},
+    {name:"Full keto", maxCarb:1, desc:"Kjøtt, fisk, egg, fett og grønt over bakken. Alt annet ute."}
+  ];
+
+  var CARB_LABEL = {1:"Kjernevare", 2:"Lavkarbo", 3:"Moderat", 4:"Karbo", 5:"Høy karbo"};
+
+  var ITEMS_BY_ID = {};
+  ITEMS.forEach(function(it){ ITEMS_BY_ID[it.id] = it; });
+  var CATEGORIES_BY_ID = {};
+  CATEGORIES.forEach(function(c){ CATEGORIES_BY_ID[c.id] = c; });
+
+  var STORAGE_KEY = "ketolisten-state-v3";
+  var THEME_KEY = "ketolisten-theme";
+  var INSTALL_DISMISS_KEY = "ketolisten-install-dismissed";
+
+  var state = {
+    ketoLevel: 2,
+    bought: [],
+    overrides: {},
+    favorites: [],
+    amount: {},
+    prices: {},
+    notes: {},
+    custom: [],
+    showAll: false,
+    categoryOrder: CATEGORIES.map(function(c){ return c.id; }),
+    recipes: [],
+    history: []
+  };
+
+  var uiMore = {};
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ Object.assign(state, JSON.parse(raw)); }
+    }catch(e){}
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function applyTheme(t){
+    if(t === "system"){ document.documentElement.removeAttribute("data-theme"); }
+    else{ document.documentElement.setAttribute("data-theme", t); }
+    document.querySelectorAll(".tbtn").forEach(function(b){ b.classList.toggle("active", b.dataset.t === t); });
+  }
+  function setTheme(t){ try{ localStorage.setItem(THEME_KEY, t); }catch(e){} applyTheme(t); }
+
+  async function copyLink(){
+    var el = document.getElementById("shareStatus");
+    try{
+      await navigator.clipboard.writeText(location.href);
+      if(el){ el.textContent = "Lenke kopiert! Del den med hvem du vil – alle får sin egen liste å justere selv."; setTimeout(function(){ el.textContent = ""; }, 5000); }
+    }catch(e){
+      if(el) el.textContent = "Kunne ikke kopiere automatisk – kopier lenken fra adressefeltet.";
+    }
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; });
+  }
+
+  function isFavorite(id){ return state.favorites.indexOf(id) !== -1; }
+
+  function onList(item){
+    if(isFavorite(item.id)) return true;
+    var ov = state.overrides[item.id];
+    if(ov !== undefined) return ov;
+    return item.carb <= LEVELS[state.ketoLevel].maxCarb;
+  }
+
+  function defaultUnitFor(it){
+    var liquids = ["melk","flote","olivenolje","kokosolje","vann","brus","saft","juice","kombucha","alkoholfriol"];
+    var boxed = ["hermtomat","kokosmelk"];
+    var pieces = ["egg","avokado","sitron","kiwi","eple","appelsin","banan","mango","druer","lok","tomat","paprika","squash","aubergine","gulrot","rodbeter","sotpotet","potet"];
+    var grams = ["kylling","biff","indrefilet","kjottdeig","bacon","skinke","laks","orret","torsk","tunfisk","reker","polser","spinat","brokkoli","blomkal","kal","selleri","sopp","agurk","baer","notter","chiafro","linfro","sesamfro"];
+    if(liquids.indexOf(it.id) !== -1) return "l";
+    if(boxed.indexOf(it.id) !== -1) return "boks";
+    if(pieces.indexOf(it.id) !== -1) return "stk";
+    if(grams.indexOf(it.id) !== -1) return "g";
+    return "pk";
+  }
+  function defaultAmount(it){
+    var u = defaultUnitFor(it);
+    var n = u === "g" ? 300 : u === "l" ? 1 : u === "boks" ? 1 : u === "stk" ? 2 : 1;
+    return n + " " + u;
+  }
+  function getAmount(id){
+    if(state.amount[id]) return state.amount[id];
+    var it = ITEMS_BY_ID[id];
+    if(it) return defaultAmount(it);
+    return "1 stk";
+  }
+  function setAmount(id, val){
+    val = val.trim();
+    if(val) state.amount[id] = val; else delete state.amount[id];
+    saveState(); render();
+  }
+
+  function setKetoLevel(v){ state.ketoLevel = parseInt(v, 10); saveState(); render(); }
+  function setShowAll(v){ state.showAll = !!v; saveState(); render(); }
+
+  function toggleBought(id){
+    var idx = state.bought.indexOf(id);
+    if(idx === -1) state.bought.push(id); else state.bought.splice(idx, 1);
+    saveState(); render();
+  }
+  function toggleFavorite(id){
+    var idx = state.favorites.indexOf(id);
+    if(idx === -1) state.favorites.push(id); else state.favorites.splice(idx, 1);
+    saveState(); render();
+  }
+  function addItem(id){ state.overrides[id] = true; saveState(); render(); }
+  function removeItem(id){
+    state.overrides[id] = false;
+    var fi = state.favorites.indexOf(id);
+    if(fi !== -1) state.favorites.splice(fi, 1);
+    saveState(); render();
+  }
+  function toggleMore(id){ uiMore[id] = !uiMore[id]; render(); }
+  function setPrice(id, val){
+    var n = parseFloat(val);
+    if(isNaN(n) || n < 0) delete state.prices[id]; else state.prices[id] = n;
+    saveState(); render();
+  }
+  function setNote(id, val){
+    val = val.trim();
+    if(val) state.notes[id] = val; else delete state.notes[id];
+    saveState(); render();
+  }
+  function clearBought(){ state.bought = []; saveState(); render(); }
+
+  function moveCategory(id, dir){
+    var arr = state.categoryOrder;
+    var i = arr.indexOf(id);
+    var j = i + dir;
+    if(i < 0 || j < 0 || j >= arr.length) return;
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    saveState(); render();
+  }
+
+  function applyRecipe(items){
+    items.forEach(function(ri){ state.overrides[ri.id] = true; state.amount[ri.id] = ri.amount; });
+    saveState(); render();
+  }
+  function applyPresetRecipe(id){ var r = RECIPES.find(function(x){ return x.id === id; }); if(r) applyRecipe(r.items); }
+  function applyCustomRecipe(id){ var r = state.recipes.find(function(x){ return x.id === id; }); if(r) applyRecipe(r.items); }
+  function saveRecipe(evt){
+    evt.preventDefault();
+    var input = document.getElementById("recipeNameInput");
+    var name = input.value.trim();
+    if(!name) return;
+    var items = ITEMS.filter(onList).map(function(it){ return {id: it.id, amount: getAmount(it.id)}; });
+    if(items.length === 0) return;
+    state.recipes.push({id:"rc" + Date.now().toString(36) + Math.random().toString(36).slice(2,6), name: name, items: items});
+    input.value = "";
+    saveState(); render();
+  }
+  function deleteRecipe(id){ state.recipes = state.recipes.filter(function(r){ return r.id !== id; }); saveState(); render(); }
+
+  function recipeMatch(items){
+    var have = 0, missing = [];
+    items.forEach(function(ri){
+      var it = ITEMS_BY_ID[ri.id];
+      if(it && onList(it)) have++;
+      else missing.push(it ? it.name : ri.id);
+    });
+    return {have: have, total: items.length, missing: missing};
+  }
+
+  function computeKetoPct(catalogItems){
+    var low = 0, total = 0;
+    catalogItems.forEach(function(it){ total++; if(it.carb <= 2) low++; });
+    return total > 0 ? Math.round((low / total) * 100) : null;
+  }
+  function endWeek(){
+    var includedCatalog = ITEMS.filter(function(it){ return onList(it) && state.bought.indexOf(it.id) !== -1; });
+    var includedCustom = state.custom.filter(function(c){ return state.bought.indexOf(c.id) !== -1; });
+    if(includedCatalog.length === 0 && includedCustom.length === 0) return;
+    var items = includedCatalog.map(function(it){ return {id: it.id, name: it.name, amount: getAmount(it.id)}; })
+      .concat(includedCustom.map(function(c){ return {id: c.id, name: c.name, amount: getAmount(c.id)}; }));
+    var entry = {date: new Date().toISOString().slice(0,10), items: items, ketoPct: computeKetoPct(includedCatalog)};
+    state.history.unshift(entry);
+    if(state.history.length > 8) state.history = state.history.slice(0, 8);
+    state.bought = [];
+    saveState(); render();
+  }
+  function reAddHistory(idx){
+    var entry = state.history[idx];
+    if(!entry) return;
+    entry.items.forEach(function(it){
+      if(ITEMS_BY_ID[it.id]){
+        state.overrides[it.id] = true;
+        state.amount[it.id] = it.amount;
+      } else {
+        var exists = state.custom.some(function(c){ return c.name === it.name; });
+        if(!exists){
+          var newId = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+          state.custom.push({id: newId, name: it.name});
+          state.amount[newId] = it.amount;
+        }
+      }
+    });
+    saveState(); render();
+  }
+  function deleteHistory(idx){ state.history.splice(idx, 1); saveState(); render(); }
+
+  function addCustom(evt){
+    evt.preventDefault();
+    var input = document.getElementById("customInput");
+    var name = input.value.trim();
+    if(!name) return;
+    state.custom.push({id:"c" + Date.now().toString(36) + Math.random().toString(36).slice(2,6), name: name});
+    input.value = "";
+    saveState(); render();
+  }
+  function removeCustom(id){
+    state.custom = state.custom.filter(function(c){ return c.id !== id; });
+    delete state.amount[id]; delete state.prices[id]; delete state.notes[id];
+    saveState(); render();
+  }
+
+  function computeTotalPrice(){
+    var sum = 0, any = false;
+    ITEMS.forEach(function(it){ if(onList(it) && state.prices[it.id] != null){ sum += state.prices[it.id]; any = true; } });
+    state.custom.forEach(function(c){ if(state.prices[c.id] != null){ sum += state.prices[c.id]; any = true; } });
+    return any ? sum : null;
+  }
+
+  function moreButtonHtml(id, name){
+    var has = (state.prices[id] != null) || !!state.notes[id];
+    return '<button type="button" class="iconbtn more' + (has ? ' has' : '') + '" title="Pris og notat" aria-label="Pris og notat for ' + escapeHtml(name) + '" onclick="toggleMore(\'' + id + '\')">&hellip;</button>';
+  }
+  function moreRowHtml(id, name){
+    if(!uiMore[id]) return "";
+    var price = state.prices[id];
+    var note = state.notes[id] || "";
+    return '<div class="item-more">' +
+      '<input type="number" class="price" min="0" step="1" placeholder="kr" value="' + (price != null ? price : "") + '" aria-label="Anslått pris, ' + escapeHtml(name) + '" onchange="setPrice(\'' + id + '\', this.value)">' +
+      '<input type="text" class="note" placeholder="Notat …" maxlength="60" value="' + escapeHtml(note) + '" aria-label="Notat, ' + escapeHtml(name) + '" onchange="setNote(\'' + id + '\', this.value)">' +
+      '</div>';
+  }
+  function amountInputHtml(id, name){
+    return '<input type="text" class="amount" value="' + escapeHtml(getAmount(id)) + '" maxlength="16" aria-label="Mengde, ' + escapeHtml(name) + '" onchange="setAmount(\'' + id + '\', this.value)">';
+  }
+
+  function formatDate(iso){
+    var months = ["jan","feb","mar","apr","mai","jun","jul","aug","sep","okt","nov","des"];
+    var d = new Date(iso + "T00:00:00");
+    return d.getDate() + ". " + months[d.getMonth()];
+  }
+
+  function renderOrderList(){
+    var html = state.categoryOrder.map(function(id, idx){
+      var cat = CATEGORIES_BY_ID[id];
+      if(!cat) return "";
+      return '<div class="order-row"><span>' + cat.label + '</span><span class="ord-btns">' +
+        '<button type="button" class="iconbtn" ' + (idx === 0 ? "disabled" : "") + ' aria-label="Flytt ' + cat.label + ' opp" onclick="moveCategory(\'' + id + '\', -1)">&uarr;</button>' +
+        '<button type="button" class="iconbtn" ' + (idx === state.categoryOrder.length - 1 ? "disabled" : "") + ' aria-label="Flytt ' + cat.label + ' ned" onclick="moveCategory(\'' + id + '\', 1)">&darr;</button>' +
+        '</span></div>';
+    }).join("");
+    document.getElementById("orderList").innerHTML = html;
+  }
+
+  function recipeCardHtml(r, isCustom){
+    var m = r.match;
+    var full = m.total > 0 && m.have === m.total;
+    var metaText = m.have + "/" + m.total + " på listen" + (full ? " – klar!" : "");
+    var missingText = (!full && m.missing.length > 0) ? '<div class="rmissing">Mangler: ' + escapeHtml(m.missing.slice(0,4).join(", ")) + (m.missing.length > 4 ? " …" : "") + '</div>' : "";
+    var delBtn = isCustom ? '<button type="button" class="iconbtn" title="Slett oppskrift" aria-label="Slett ' + escapeHtml(r.name) + '" onclick="deleteRecipe(\'' + r.id + '\')">&times;</button>' : "";
+    var applyFn = isCustom ? "applyCustomRecipe" : "applyPresetRecipe";
+    return '<div class="recipe' + (full ? ' recipe--ready' : '') + '"><div><div class="rname">' + escapeHtml(r.name) + '</div>' +
+      '<div class="rmeta">' + metaText + '</div>' + missingText + '</div>' +
+      '<div class="ractions"><button type="button" class="add" onclick="' + applyFn + '(\'' + r.id + '\')">Legg til</button>' + delBtn + '</div></div>';
+  }
+
+  function byMatchDesc(a, b){
+    var ar = a.match.have / a.match.total, br = b.match.have / b.match.total;
+    return br - ar || a.match.missing.length - b.match.missing.length;
+  }
+
+  function renderRecipes(){
+    var preset = RECIPES.map(function(r){ return {id: r.id, name: r.name, items: r.items, match: recipeMatch(r.items)}; });
+    preset.sort(byMatchDesc);
+    document.getElementById("presetRecipes").innerHTML = preset.map(function(r){ return recipeCardHtml(r, false); }).join("");
+
+    var custom = state.recipes.map(function(r){ return {id: r.id, name: r.name, items: r.items, match: recipeMatch(r.items)}; });
+    custom.sort(byMatchDesc);
+    document.getElementById("customRecipes").innerHTML = custom.map(function(r){ return recipeCardHtml(r, true); }).join("");
+  }
+
+  function renderHistory(){
+    var el = document.getElementById("historyList");
+    if(state.history.length === 0){ el.innerHTML = '<p class="empty">Ingen arkiverte uker ennå.</p>'; return; }
+    el.innerHTML = state.history.map(function(entry, idx){
+      var color = entry.ketoPct == null ? "var(--text-muted)" : entry.ketoPct >= 70 ? "var(--carb-1)" : entry.ketoPct >= 40 ? "var(--carb-3)" : "var(--carb-5)";
+      var bar = entry.ketoPct == null ? "" : '<div class="hist-bar-track"><div class="hist-bar-fill" style="width:' + entry.ketoPct + '%;background:' + color + '"></div></div>';
+      return '<div class="hist-row"><div class="hist-top"><span class="hist-date">' + formatDate(entry.date) + '</span>' +
+        '<span class="hist-meta">' + entry.items.length + ' varer' + (entry.ketoPct != null ? " · " + entry.ketoPct + "% lavkarbo" : "") + '</span></div>' +
+        bar +
+        '<div class="hist-actions"><button type="button" class="linkbtn" onclick="reAddHistory(' + idx + ')">Legg til igjen</button>' +
+        '<button type="button" class="linkbtn" onclick="deleteHistory(' + idx + ')">Slett</button></div></div>';
+    }).join("");
+  }
+
+  function render(){
+    var level = LEVELS[state.ketoLevel];
+    document.getElementById("levelName").textContent = level.name;
+    document.getElementById("levelDesc").textContent = level.desc;
+    document.getElementById("ketoSlider").value = state.ketoLevel;
+    document.getElementById("ketoSlider").style.setProperty("--fill", (state.ketoLevel / 4) * 100 + "%");
+    document.getElementById("showAllToggle").checked = state.showAll;
+    document.querySelectorAll(".ticks span").forEach(function(el){
+      el.classList.toggle("active", parseInt(el.dataset.i, 10) === state.ketoLevel);
+    });
+
+    var catsHtml = "";
+    var totalOn = 0, totalBought = 0;
+
+    state.categoryOrder.forEach(function(catId){
+      var cat = CATEGORIES_BY_ID[catId];
+      if(!cat) return;
+      var items = ITEMS.filter(function(it){ return it.cat === catId; });
+      var visible = items.filter(function(it){ return onList(it) || state.showAll; });
+      if(visible.length === 0) return;
+
+      var onCount = items.filter(onList).length;
+      totalOn += onCount;
+
+      var rows = visible.map(function(it){
+        var included = onList(it);
+        var bought = state.bought.indexOf(it.id) !== -1;
+        var fav = isFavorite(it.id);
+        if(included) totalBought += bought ? 1 : 0;
+        var badge = '<span class="badge carb-' + it.carb + '" title="Ca. ' + it.g + ' g netto karbo per 100 g">' + CARB_LABEL[it.carb] + ' · ' + it.g + 'g</span>';
+        var starBtn = '<button type="button" class="iconbtn star' + (fav ? ' on' : '') + '" title="' + (fav ? "Fjern som fast vare" : "Merk som fast vare") + '" aria-label="' + (fav ? "Fjern " + escapeHtml(it.name) + " som fast vare" : "Merk " + escapeHtml(it.name) + " som fast vare") + '" onclick="toggleFavorite(\'' + it.id + '\')">' + (fav ? "★" : "☆") + '</button>';
+
+        if(included){
+          var row = '<div class="item' + (bought ? ' bought' : '') + '">' +
+            '<input type="checkbox" id="chk_' + it.id + '" ' + (bought ? "checked" : "") + ' onchange="toggleBought(\'' + it.id + '\')">' +
+            '<label for="chk_' + it.id + '" class="item-name">' + escapeHtml(it.name) + '</label>' +
+            amountInputHtml(it.id, it.name) + badge + starBtn + moreButtonHtml(it.id, it.name) +
+            '<button type="button" class="iconbtn" title="Fjern fra listen" aria-label="Fjern ' + escapeHtml(it.name) + ' fra listen" onclick="removeItem(\'' + it.id + '\')">&times;</button>' +
+            '</div>';
+          return '<div class="item-wrap">' + row + moreRowHtml(it.id, it.name) + '</div>';
+        } else {
+          return '<div class="item item--ghost">' +
+            '<span class="item-spacer"></span>' +
+            '<span class="item-name">' + escapeHtml(it.name) + '</span>' +
+            badge + starBtn +
+            '<button type="button" class="iconbtn" title="Legg til på listen" aria-label="Legg til ' + escapeHtml(it.name) + ' på listen" onclick="addItem(\'' + it.id + '\')">+</button>' +
+            '</div>';
+        }
+      }).join("");
+
+      catsHtml += '<div class="category"><h2>' + cat.label + ' <span class="n">' + onCount + '</span></h2>' + rows + '</div>';
+    });
+
+    document.getElementById("categories").innerHTML = catsHtml || '<p class="empty">Ingen varer i denne innstillingen. Skru på «Vis alle varer» for å legge til noe manuelt.</p>';
+
+    document.getElementById("customList").innerHTML = state.custom.map(function(c){
+      var bought = state.bought.indexOf(c.id) !== -1;
+      totalOn += 1;
+      totalBought += bought ? 1 : 0;
+      var row = '<div class="item' + (bought ? ' bought' : '') + '">' +
+        '<input type="checkbox" id="chk_' + c.id + '" ' + (bought ? "checked" : "") + ' onchange="toggleBought(\'' + c.id + '\')">' +
+        '<label for="chk_' + c.id + '" class="item-name">' + escapeHtml(c.name) + '</label>' +
+        amountInputHtml(c.id, c.name) +
+        '<span class="badge carb-0">Egen</span>' + moreButtonHtml(c.id, c.name) +
+        '<button type="button" class="iconbtn" title="Slett vare" aria-label="Slett ' + escapeHtml(c.name) + '" onclick="removeCustom(\'' + c.id + '\')">&times;</button>' +
+        '</div>';
+      return '<div class="item-wrap">' + row + moreRowHtml(c.id, c.name) + '</div>';
+    }).join("");
+    document.getElementById("customCount").textContent = state.custom.length ? state.custom.length : "";
+
+    document.getElementById("summaryCount").textContent = totalOn + " varer på listen · " + totalBought + " kjøpt";
+    document.getElementById("totalValue").textContent = totalOn + " varer";
+
+    var priceSum = computeTotalPrice();
+    var priceRow = document.getElementById("tlPriceRow");
+    if(priceSum != null){ priceRow.hidden = false; document.getElementById("tlPriceValue").textContent = "kr " + Math.round(priceSum); }
+    else{ priceRow.hidden = true; }
+
+    renderOrderList();
+    renderRecipes();
+    renderHistory();
+  }
+
+  // ---- Install-as-app banner ----
+  var deferredInstallPrompt = null;
+
+  function isStandalone(){
+    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+
+  function initInstallBanner(){
+    var banner = document.getElementById("installBanner");
+    if(!banner || isStandalone()) return;
+    var dismissed = false;
+    try{ dismissed = localStorage.getItem(INSTALL_DISMISS_KEY) === "1"; }catch(e){}
+    if(dismissed) return;
+
+    var ua = navigator.userAgent || "";
+    var isIOS = /iphone|ipad|ipod/i.test(ua) && !window.MSStream;
+    var isAndroid = /android/i.test(ua);
+    var textEl = document.getElementById("installText");
+    var btn = document.getElementById("installBtn");
+    var dismissBtn = document.getElementById("installDismiss");
+
+    if(isIOS){
+      textEl.textContent = "Legg Ketolisten på hjemskjermen: trykk Del-ikonet nederst i Safari, og velg «Legg til på Hjem-skjerm».";
+    } else if(isAndroid){
+      textEl.textContent = "Legg Ketolisten på startskjermen: trykk ⋮-menyen øverst i Chrome og velg «Installer app» – eller bruk knappen her.";
+      btn.hidden = !deferredInstallPrompt;
+    } else {
+      return; // desktop / unknown browser: not the target use case for this banner
+    }
+    banner.hidden = false;
+
+    dismissBtn.onclick = function(){
+      banner.hidden = true;
+      try{ localStorage.setItem(INSTALL_DISMISS_KEY, "1"); }catch(e){}
+    };
+    btn.onclick = function(){
+      if(!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(function(){ deferredInstallPrompt = null; banner.hidden = true; });
+    };
+  }
+
+  window.addEventListener("beforeinstallprompt", function(e){
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    var banner = document.getElementById("installBanner");
+    var btn = document.getElementById("installBtn");
+    if(banner && btn && !banner.hidden) btn.hidden = false;
+  });
+  window.addEventListener("appinstalled", function(){
+    var banner = document.getElementById("installBanner");
+    if(banner) banner.hidden = true;
+    try{ localStorage.setItem(INSTALL_DISMISS_KEY, "1"); }catch(e){}
+  });
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+
+  loadState();
+  (function(){ var t = "system"; try{ t = localStorage.getItem(THEME_KEY) || "system"; }catch(e){} applyTheme(t); })();
+  render();
+  initInstallBanner();
+</script>
+</body>
+</html>
